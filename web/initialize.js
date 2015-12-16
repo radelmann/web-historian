@@ -1,4 +1,5 @@
 var fs = require('fs');
+var cron = require('cron')
 
 // Sync is ok here because this is called just once on startup.
 module.exports = function (basePath) {
@@ -21,3 +22,5 @@ module.exports = function (basePath) {
     fs.mkdirSync(basePath + "/sites");
   }
 };
+
+// run cron
