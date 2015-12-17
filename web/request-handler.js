@@ -11,13 +11,28 @@ exports.handleRequest = function(req, res) {
 
   var urlObj = url.parse(req.url);
 
-  console.log(urlObj);
   if (req.method === 'GET') {
     if (urlObj.pathname === '/') {
       var fileName = archive.paths.siteAssets + '/index.html';
       httpHelper.serveAssets(res, fileName, function(res, contents) {
         res.writeHead(200, httpHelper.headers);
         res.end(contents);
+
+      });
+    } else {
+      //parse fixture name from url
+      var fixture = urlObj.pathname;
+      archive.isUrlArchived(fixture, function(isFile) {
+        if (isFile) {
+          var fileName = archive.paths.archivedSites + fixture;
+          httpHelper.serveAssets(res, fileName, function(res, contents) {
+            res.writeHead(200, httpHelper.headers);
+            res.end(contents);
+          });
+        } else {
+          res.writeHead(404, httpHelper.headers);
+          res.end();
+        }
       });
     }
   }

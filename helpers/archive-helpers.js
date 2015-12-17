@@ -1,6 +1,7 @@
 var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
+var http = require('http');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -26,16 +27,78 @@ exports.initialize = function(pathsObj) {
 // modularize your code. Keep it clean!
 
 exports.readListOfUrls = function() {
+  fs.readFile(exports.paths.list, 'utf8', function(err, data) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+
+    return data.split('\n');
+  });
 };
 
-exports.isUrlInList = function() {
+exports.isUrlInList = function(url) {
+  return readListOfUrls.indexOf(url) > -1;
 };
 
-exports.addUrlToList = function() {
+exports.addUrlToList = function(url) {
+  fs.appendFile(exports.paths.list, url, 'utf8', function(err) {
+    if (err) {
+      console.log(err);
+      return;
+    }
+  })
 };
 
-exports.isUrlArchived = function() {
+exports.isUrlArchived = function(url, callback) {
+  console.log(exports.paths.archivedSites + url);
+  fs.stat(exports.paths.archivedSites + url, function(err, stats) {
+    if (err) {
+      return callback(false);
+    }
+
+    return callback(true);
+  });
 };
 
 exports.downloadUrls = function() {
+  //get array of urls
+  var urls = readListOfUrls();
+  urls.forEach(function(url) {
+    if (!isUrlArchived(url)) {
+      download(url);
+    }
+  });
+
+  var download = function(url) {
+    var options = {
+      host: url,
+      port: 80,
+      path: ''
+    };
+
+    var req = http.get(options, function(response) {
+      // handle the response
+      var res_data = '';
+      response.on('data', function(chunk) {
+        res_data += chunk;
+      });
+
+      response.on('end', function() {
+        console.log(res_data);
+        fs.writeFile(exports.paths.archivedSites + url, function(err) {
+          if (err) {
+            console.log(err);
+            return;
+          }
+
+          return; //success
+        });    
+      });
+    });
+
+    req.on('error', function(err) {
+      console.log("Request error: " + err.message);
+    });
+  }
 };
