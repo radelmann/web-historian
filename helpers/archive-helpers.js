@@ -26,27 +26,33 @@ exports.initialize = function(pathsObj) {
 // The following function names are provided to you to suggest how you might
 // modularize your code. Keep it clean!
 
-exports.readListOfUrls = function() {
+exports.readListOfUrls = function(cb) {
   fs.readFile(exports.paths.list, 'utf8', function(err, data) {
     if (err) {
-      console.log(err);
+      console.log(err + 'error from readlist');
       return;
     }
 
-    return data.split('\n');
+    cb(data.split('\n'));
   });
 };
 
-exports.isUrlInList = function(url) {
-  return readListOfUrls.indexOf(url) > -1;
+exports.isUrlInList = function(url, cb) {
+  exports.readListOfUrls(function(array) {
+    if (array.indexOf(url) > -1) {
+      cb(true)
+    } else {
+      cb(false)
+    }
+  })
 };
 
-exports.addUrlToList = function(url) {
-  fs.appendFile(exports.paths.list, url, 'utf8', function(err) {
+exports.addUrlToList = function(url, cb) {
+  fs.appendFile(exports.paths.list, url +'\n', 'utf8', function(err) {
     if (err) {
       console.log(err);
-      return;
     }
+    return cb()
   })
 };
 
@@ -61,15 +67,8 @@ exports.isUrlArchived = function(url, callback) {
   });
 };
 
-exports.downloadUrls = function() {
+exports.downloadUrls = function(array) {
   //get array of urls
-  var urls = readListOfUrls();
-  urls.forEach(function(url) {
-    if (!isUrlArchived(url)) {
-      download(url);
-    }
-  });
-
   var download = function(url) {
     var options = {
       host: url,
@@ -85,15 +84,14 @@ exports.downloadUrls = function() {
       });
 
       response.on('end', function() {
-        console.log(res_data);
-        fs.writeFile(exports.paths.archivedSites + url, function(err) {
+        fs.writeFile(exports.paths.archivedSites + '/' + url, res_data, function(err) {
           if (err) {
             console.log(err);
             return;
           }
 
           return; //success
-        });    
+        });
       });
     });
 
@@ -101,4 +99,12 @@ exports.downloadUrls = function() {
       console.log("Request error: " + err.message);
     });
   }
+
+  array.forEach(function(url) {
+    //exports.isUrlArchived(url, function(result) {
+    //if (result) {
+    download(url);
+    //}
+    //}); //cb
+  });
 };

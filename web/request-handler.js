@@ -20,7 +20,7 @@ exports.handleRequest = function(req, res) {
 
       });
     } else {
-      //parse fixture name from url
+      // parse fixture name from url
       var fixture = urlObj.pathname;
       archive.isUrlArchived(fixture, function(isFile) {
         if (isFile) {
@@ -37,28 +37,46 @@ exports.handleRequest = function(req, res) {
     }
   }
 
-  //res.end(archive.paths.list);
 
+  if (req.method === "POST") {
+    if (urlObj.pathname === '/') {
+      var postData = '';
 
-  /*
+      req.on('data', function(data) {
+        postData += data;
+      });
 
-  get 
-    serve static
+      req.on('end', function(err) {
+        var url = postData.split('=')[1];
 
+        archive.isUrlInList(url, function(result) {
+          if (result) {
+            var fileName = archive.paths.archivedSites + '/' + url;
+            
+            httpHelper.serveAssets(res, fileName, function(res, contents) {
+              res.writeHead(302, httpHelper.headers);
+              res.end(contents);
+            });
+          } else {
+            archive.addUrlToList(url, function() {
+              console.log('success!');
+            });
+            
+            //display waiting page
+            
+            var fileName = archive.paths.siteAssets + '/loading.html';
+            
+            httpHelper.serveAssets(res, fileName, function(res, contents) {
+              res.writeHead(200, httpHelper.headers);
+              res.end(contents);
+            });
 
-  post
-
-    not in urllist
-      start piping
-      send loading page
-
-    in list but still piping
-      fs.stats().isfile
-        send loading page
-    in list and piped
-      send assets
-
-
-
-  */
-};
+            var array = [];
+            array.push(url);
+            archive.downloadUrls(array);
+          }
+        });
+      });
+    }
+  }
+}
