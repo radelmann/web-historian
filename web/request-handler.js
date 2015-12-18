@@ -22,7 +22,7 @@ exports.handleRequest = function(req, res) {
     } else {
       // parse fixture name from url
       var fixture = urlObj.pathname;
-      archive.isUrlArchived(fixture, function(isFile) {
+      archive.isUrlArchived(fixture).then(function(isFile) {
         if (isFile) {
           var fileName = archive.paths.archivedSites + fixture;
           httpHelper.serveAssets(res, fileName, function(res, contents) {
@@ -49,25 +49,26 @@ exports.handleRequest = function(req, res) {
       req.on('end', function(err) {
         var url = postData.split('=')[1];
 
-        archive.isUrlInList(url, function(result) {
+        archive.isUrlInList(url).then(function(result) {
           if (result) {
             var fileName = archive.paths.archivedSites + '/' + url;
-            
+
             httpHelper.serveAssets(res, fileName, function(res, contents) {
               res.writeHead(302, httpHelper.headers);
               res.end(contents);
             });
+            
           } else {
-            archive.addUrlToList(url, function() {
+            archive.addUrlToList(url).then(function() {
               console.log('success!');
             });
-            
+
             //display waiting page
-            
+
             var fileName = archive.paths.siteAssets + '/loading.html';
-            
+
             httpHelper.serveAssets(res, fileName, function(res, contents) {
-              res.writeHead(200, httpHelper.headers);
+              res.writeHead(302, httpHelper.headers);
               res.end(contents);
             });
 

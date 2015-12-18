@@ -2,6 +2,7 @@ var fs = require('fs');
 var path = require('path');
 var _ = require('underscore');
 var http = require('http');
+var promise = require('bluebird');
 
 /*
  * You will need to reuse the same paths many times over in the course of this sprint.
@@ -26,44 +27,93 @@ exports.initialize = function(pathsObj) {
 // The following function names are provided to you to suggest how you might
 // modularize your code. Keep it clean!
 
-exports.readListOfUrls = function(cb) {
-  fs.readFile(exports.paths.list, 'utf8', function(err, data) {
-    if (err) {
-      console.log(err + 'error from readlist');
-      return;
-    }
+// exports.readListOfUrls = function(cb) {
+//   fs.readFile(exports.paths.list, 'utf8', function(err, data) {
+//     if (err) {
+//       console.log(err + 'error from readlist');
+//       return;
+//     }
 
-    cb(data.split('\n'));
+//     cb(data.split('\n'));
+//   });
+
+
+// };
+
+exports.readListOfUrls = function() {
+  return new Promise(function(resolve, reject) {
+    fs.readFile(exports.paths.list, 'utf8', function(err, data) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve(data.split('\n'));
+      }
+    });
   });
 };
 
-exports.isUrlInList = function(url, cb) {
-  exports.readListOfUrls(function(array) {
-    if (array.indexOf(url) > -1) {
-      cb(true)
-    } else {
-      cb(false)
-    }
-  })
+// exports.isUrlInList = function(url, cb) {
+//   exports.readListOfUrls(function(array) {
+//     if (array.indexOf(url) > -1) {
+//       cb(true);
+//     } else {
+//       cb(false);
+//     }
+//   });
+// };
+
+exports.isUrlInList = function(url) {
+  return new Promise(function(resolve, reject) {
+    exports.readListOfUrls().then(function(array) {
+      if (array.indexOf(url) > -1) {
+        resolve(true);
+      } else {
+        resolve(false);
+      }
+    });
+  });
 };
 
-exports.addUrlToList = function(url, cb) {
-  fs.appendFile(exports.paths.list, url +'\n', 'utf8', function(err) {
-    if (err) {
-      console.log(err);
-    }
-    return cb()
-  })
+// exports.addUrlToList = function(url, cb) {
+//   fs.appendFile(exports.paths.list, url + '\n', 'utf8', function(err) {
+//     if (err) {
+//       console.log(err);
+//     }
+//     return cb();
+//   });
+// };
+
+exports.addUrlToList = function(url) {
+  return new Promise(function(resolve, reject) {
+    fs.appendFile(exports.paths.list, url + '\n', 'utf8', function(err) {
+      if (err) {
+        reject(err);
+      } else {
+        resolve();
+      }
+    });
+  });
 };
 
-exports.isUrlArchived = function(url, callback) {
-  console.log(exports.paths.archivedSites + url);
-  fs.stat(exports.paths.archivedSites + url, function(err, stats) {
-    if (err) {
-      return callback(false);
-    }
+// exports.isUrlArchived = function(url, callback) {
+//   fs.stat(exports.paths.archivedSites + url, function(err, stats) {
+//     if (err) {
+//       return callback(false);
+//     }
 
-    return callback(true);
+//     return callback(true);
+//   });
+// };
+
+exports.isUrlArchived = function(url) {
+  return new Promise(function(resolve, reject) {
+    fs.stat(exports.paths.archivedSites + url, function(err, stats) {
+      if (err) {
+        resolve(false);
+      } else {
+        resolve(true);
+      }
+    });
   });
 };
 
@@ -87,19 +137,17 @@ exports.downloadUrls = function(array) {
         fs.writeFile(exports.paths.archivedSites + '/' + url, res_data, function(err) {
           if (err) {
             console.log(err);
-            return;
           }
-
-          return; //success
         });
       });
-    });
 
-    req.on('error', function(err) {
-      console.log("Request error: " + err.message);
-    });
-  }
 
+      req.on('error', function(err) {
+        console.log("Request error: " + err.message);
+      });
+    });
+  };
+  
   array.forEach(function(url) {
     //exports.isUrlArchived(url, function(result) {
     //if (result) {
